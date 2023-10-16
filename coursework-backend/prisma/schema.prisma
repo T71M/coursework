@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  firstname String
+  lastname  String
+  surname   String
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    Int
+  email     String   @unique
+  password  String
+  Order     Order[]
+}
+
+model Point {
+  id         Int     @id @default(autoincrement())
+  name       String  @unique
+  region     Region  @relation(fields: [regionId], references: [id])
+  regionId   Int
+  startPoint Route[] @relation("startPoint")
+  endPoint   Route[] @relation("endPoint")
+}
+
+model Role {
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  description String
+  User        User[]
+}
+
+enum bus_condition {
+  excellent
+  good
+  bad
+}
+
+model Bus {
+  id          Int                    @id @default(autoincrement())
+  name        String                 @unique
+  condition   bus_condition          @default(excellent)
+  seats_count Int
+  Route       Route[]
+  comforts    BusConnectedComforts[]
+}
+
+model BusComfort {
+  id    Int                    @id @default(autoincrement())
+  name  String
+  buses BusConnectedComforts[]
+}
+
+model BusConnectedComforts {
+  bus       Bus        @relation(references: [id], fields: [busId], onDelete: Cascade)
+  busId     Int
+  comfort   BusComfort @relation(fields: [comfortId], references: [id], onDelete: Cascade)
+  comfortId Int
+
+  @@id([busId, comfortId])
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model Route {
+  id           Int     @id @default(autoincrement())
+  name         String
+  startPoint   Point   @relation("startPoint", fields: [startPointId], references: [id])
+  startPointId Int
+  endPoint     Point   @relation("endPoint", fields: [endPointId], references: [id])
+  endPointId   Int
+  Order        Order[]
+  weekDayStart Weekday
+  weekDayStop  Weekday
+  startTime    String
+  endTime      String
+  bus          Bus     @relation(fields: [busId], references: [id])
+  busId        Int
+  price        Int
+}
+
+model Order {
+  id         Int      @id @default(autoincrement())
+  route      Route    @relation(fields: [routeId], references: [id])
+  routeId    Int
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  date       DateTime
+  seat_count Int
+}
+
+model Region {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  Point Point[]
+}
